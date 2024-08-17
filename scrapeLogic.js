@@ -35,7 +35,7 @@ const scrapeLogic = async (res) => {
       .waitHandle();
     const fullTitle = await textSelector?.evaluate(el => el.textContent);
 
-    res.send('The title of this blog post is "%s".', fullTitle);
+    res.send(`The title of this blog post is ${fullTitle}`);
 
   } catch (e) {
     console.error(e);
