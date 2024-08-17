@@ -20,7 +20,7 @@ const scrapeLogic = async (res) => {
         await page.goto(`https://apps.mypurecloud.com.au/directory/#/person/${process.env.id}`);
         await page.locator('#email').fill(process.env.user);
         await page.locator('#password').fill(process.env.pass);
-        await page.locator('button[type='submit']').click('button[type='submit']');
+        await page.locator('button[type="submit"]').click('button[type="submit"]');
         await page.waitForNavigation({ waitUntil: 'networkidle0' });
 
         res.send('The is genesysRefresh file');
