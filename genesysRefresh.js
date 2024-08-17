@@ -33,4 +33,4 @@ const genesysRefresh = async (res) => {
     }
 };
 
-module.exports = { scrapeLogic };
+module.exports = { genesysRefresh };
