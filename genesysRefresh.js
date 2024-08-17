@@ -51,7 +51,22 @@ const genesysRefresh = async (res) => {
 
     try {
         const result = await logFirstAuthHeader();
-        res.send(result);
+
+        fetch(process.env.db, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                Bearer: `${result.authHeader}`
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch((error) => console.error('Error:', error));
+
+        res.send('successfully update db');
+
     } catch (error) {
         console.error(error);
         res.send(`result: ${error}`);
