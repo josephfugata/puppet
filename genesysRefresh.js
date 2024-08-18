@@ -1,3 +1,4 @@
+import axios from 'axios';
 const puppeteer = require("puppeteer");
 require("dotenv").config();
 
@@ -52,18 +53,18 @@ const genesysRefresh = async (res) => {
     try {
         const result = await logFirstAuthHeader();
 
-        fetch(process.env.db, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                Bearer: `${result.authHeader}`
-            })
-        })
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch((error) => console.error('Error:', error));
+        try {
+            const response = await axios.patch(process.env.db, {
+                Bearer: result.authHeader,
+            }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            console.log(response.data);
+        } catch (error) {
+            console.error('Error:', error);
+        }
 
         res.send('successfully update db');
 
