@@ -1,77 +1,60 @@
 const axios = require('axios');
-const puppeteer = require("puppeteer");
-require("dotenv").config();
+const puppeteer = require('puppeteer');
+require('dotenv').config();
 
 const genesysRefresh = async (res) => {
-    async function logFirstAuthHeader() {
-        return new Promise(async (resolve, reject) => {
-            const browser = await puppeteer.launch({
-                args: [
-                    "--disable-setuid-sandbox",
-                    "--no-sandbox",
-                    "--single-process",
-                    "--no-zygote",
-                ],
-                executablePath:
-                    process.env.NODE_ENV === "production"
-                        ? process.env.PUPPETEER_EXECUTABLE_PATH
-                        : puppeteer.executablePath(),
-            });
+    const getAuthHeader = async () => {
+        const browser = await puppeteer.launch({
+            args: ["--disable-setuid-sandbox","--no-sandbox","--single-process","--no-zygote"],
+            executablePath: process.env.NODE_ENV === "production" ? process.env.PUPPETEER_EXECUTABLE_PATH : puppeteer.executablePath(),
+        });
+
+        try {
             const page = await browser.newPage();
             await page.setRequestInterception(true);
 
-            page.on("request", async (request) => {
-                const authHeader = request.headers()["authorization"];
-                if (authHeader) {
-                    await browser.close();
-                    resolve({ authHeader });
-                }
-                request.continue();
+            const authPromise = new Promise((resolve) => {
+                page.on('request', (request) => {
+                    const authHeader = request.headers()['authorization'];
+                    if (authHeader) {
+                        resolve(authHeader);
+                        browser.close();
+                    } else {
+                        request.continue();
+                    }
+                });
             });
 
-            try {
-                await page.goto(
-                    `https://apps.mypurecloud.com.au/directory/#/person/${process.env.id}`
-                );
-                await page.setViewport({ width: 1080, height: 1024 });
-                await page.locator("#email").fill(process.env.user);
-                await page.locator("#password").fill(process.env.pass);
-                await page.locator('button[type="submit"]').click();
+            await page.goto(`https://apps.mypurecloud.com.au/directory/#/person/${process.env.id}`, { waitUntil: 'networkidle2' });
+            await page.type('#email', process.env.user);
+            await page.type('#password', process.env.pass);
+            await page.click('button[type="submit"]');
 
-                // Set a timeout in case the auth header is never found
-                setTimeout(() => {
+            // Set timeout to reject the promise if the auth header is not found
+            const authHeader = await Promise.race([
+                authPromise,
+                new Promise((_, reject) => setTimeout(() => {
                     browser.close();
                     reject(new Error("Timeout: Authorization header not found"));
-                }, 30000); // 30 seconds timeout
-            } catch (error) {
-                await browser.close();
-                reject(error);
-            }
-        });
-    }
+                }, 30000))
+            ]);
+
+            return authHeader;
+        } catch (error) {
+            throw error;
+        }
+    };
 
     try {
-        const result = await logFirstAuthHeader();
-
-        try {
-            const response = await axios.patch(process.env.db, {
-                Bearer: result.authHeader,
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            console.log(response.data);
-        } catch (error) {
-            console.error('Error:', error);
-        }
-
-        res.send('successfully update db');
-
+        const authHeader = await getAuthHeader();
+        const response = await axios.patch(process.env.db, { Bearer: authHeader }, {
+            headers: { 'Content-Type': 'application/json' },
+        });
+        console.log(response.data);
+        res.send('Successfully updated DB');
     } catch (error) {
         console.error(error);
-        res.send(`result: ${error}`);
-        return { error: error.message };
+        res.send(`Result: ${error.message}`);
     }
 };
 
