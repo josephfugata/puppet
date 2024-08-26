@@ -5,6 +5,7 @@ require('dotenv').config();
 const genesysRefresh = async (res) => {
     const getAuthHeader = async () => {
         const browser = await puppeteer.launch({
+            headless: false,
             args: ["--disable-setuid-sandbox","--no-sandbox","--single-process","--no-zygote"],
             executablePath: process.env.NODE_ENV === "production" ? process.env.PUPPETEER_EXECUTABLE_PATH : puppeteer.executablePath(),
         });
@@ -25,8 +26,10 @@ const genesysRefresh = async (res) => {
                 });
             });
 
-            await page.goto(`https://apps.mypurecloud.com.au/directory/#/person/${process.env.id}`, { waitUntil: 'networkidle2' });
+            await page.goto(`https://apps.mypurecloud.com.au/directory/#/person/${process.env.id}`);
+            await page.waitForSelector('#email');
             await page.type('#email', process.env.user);
+            await page.waitForSelector('#password');
             await page.type('#password', process.env.pass);
             await page.click('button[type="submit"]');
 
