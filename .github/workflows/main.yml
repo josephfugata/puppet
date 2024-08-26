@@ -1,0 +1,9 @@
+- id: get-title
+  uses: maku693/action-puppeteer-script@v0.3.0
+  with:
+    script: |
+      const page = await browser.newPage();
+      await page.goto('https://example.com');
+      const title = await page.$eval('title', el => el.textContent);
+      return title;
+- run: echo '${{ steps.get-title.outputs.result }}' # This will puts `"Example Domain"`
