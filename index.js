@@ -1,19 +1,19 @@
 const express = require("express");
-const app = express();
-const { scrapeLogic } = require("./scrapeLogic");
-const { genesysRefresh } = require("./genesysRefresh");
+const app = express(); 
+const { ms } = require("./msauth");
+const { purecloud } = require("./genesysauth");
 
-app.get("/scrape", (req, res) => {
-  scrapeLogic(res);
+app.get("/", (req, res) => {
+  res.send("Puppeteer server is up and running!");
+});
+
+app.get("/ms", (req, res) => {
+  ms(res);
 });
 
 app.get("/genesys", (req, res) => {
-  genesysRefresh(res);
-});
-
-app.get("/", (req, res) => {
-  res.send("Render Puppeteer server is up and running!");
-});
+  purecloud(res);
+}); 
 
 const PORT = process.env.PORT || 4000;
 
